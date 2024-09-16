@@ -170,7 +170,7 @@ void simulateFight() {
     }
 }
 
-int main() {
+void Homework2() {
     int command;
 
     while (true) {
@@ -199,6 +199,60 @@ int main() {
             std::cout << "Invalid command, please try again.\n";
         }
     }
+}
+
+
+class Building
+{
+private:
+    static int nextId; 
+    int id;
+    int maxAge;
+    int initialCost;
+    int currentAge;
+
+    void Destroy() {
+        std::cout << "Building with ID " << id << " has been destroyed.\n";
+    }
+public:
+    Building(int maxAge, int initialCost)
+        : maxAge(maxAge), initialCost(initialCost), currentAge(0) 
+    {
+        id = nextId++;
+    }
+    int GetCost() const 
+    {
+        if (currentAge >= maxAge) 
+            return 0; 
+        return initialCost * (maxAge - currentAge) / maxAge;
+    }
+    void ToAge(int years) 
+    {
+        currentAge += years;
+        if (currentAge >= maxAge) {
+            Destroy();
+        }
+    }
+    int GetId() const 
+    {
+        return id;
+    }
+
+};
+int Building::nextId = 1;
+
+int main()
+{
+    Building buildingOne(50, 10000); 
+    std::cout << "Initial cost: " << buildingOne.GetCost() << std::endl;
+
+    buildingOne.ToAge(10); 
+    std::cout << "Cost after 10 years: " << buildingOne.GetCost() << std::endl;
+
+    buildingOne.ToAge(25); 
+    std::cout << "Cost after 35 years: " << buildingOne.GetCost() << std::endl;
+    buildingOne.ToAge(20); 
+    std::cout << "Cost after 55 years: " << buildingOne.GetCost() << std::endl;
 
     return 0;
 }
