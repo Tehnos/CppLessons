@@ -315,47 +315,6 @@ public:
 		return "Magic Wand";
 	}
 };
-class Character
-{
-private:
-	std::vector<std::unique_ptr<Weapon>> weapons;
-	Weapon* activeWeapon = nullptr;
-
-public:
-	void AddWeapon(std::unique_ptr<Weapon> weapon)
-	{
-		if (weapons.empty())
-		{
-			activeWeapon = weapon.get();
-		}
-		weapons.push_back(std::move(weapon));
-	}
-
-	void SetActiveWeapon(int index)
-	{
-		if (index >= 0 && index < weapons.size())
-		{
-			activeWeapon = weapons[index].get();
-		}
-		else
-		{
-			std::cout << "Invalid weapon index!" << std::endl;
-		}
-	}
-
-	Weapon* GetActiveWeapon() const
-	{
-		return activeWeapon;
-	}
-
-	void ShowWeapons() const
-	{
-		for (size_t i = 0; i < weapons.size(); ++i)
-		{
-			std::cout << i << ": " << weapons[i]->GetName() << " (Damage: " << weapons[i]->GetDamage() << ")\n";
-		}
-	}
-};
 
 void SetColor(unsigned short backColor, unsigned short frontColor)
 {
@@ -415,50 +374,166 @@ size_t Menu(const char** textMenu, size_t sizeMenu, size_t select)
 
 	return select;
 }
-int main() {
-	Character hero;
+//void homework4() {
+//	Character hero;
+//
+//	hero.AddWeapon(std::make_unique<Sword>());
+//	hero.AddWeapon(std::make_unique<Bow>());
+//	hero.AddWeapon(std::make_unique<MagicWand>());
+//
+//	SetColor(BACKCOLOR, FRONTCOLOR);
+//	system("cls");
+//	size_t select = 0;
+//	const char* textMenu[] = { "Show all weapon",
+//							   "Select sword",
+//							   "Select bow",
+//							   "Select MagicWand",
+//							   "Exit" };
+//	size_t sizeMenu = sizeof(textMenu) / sizeof(*textMenu);
+//
+//	while (1)
+//	{
+//		select = Menu(textMenu, sizeMenu, select);
+//		system("cls");
+//		switch (select)
+//		{
+//		case 0:
+//			hero.ShowWeapons();
+//			break;
+//		case 1:
+//			hero.SetActiveWeapon(0);
+//			std::cout << "Changed active weapon to: " << hero.GetActiveWeapon()->GetName() << "\n";
+//			break;
+//		case 2:
+//			hero.SetActiveWeapon(1);
+//			std::cout << "Changed active weapon to: " << hero.GetActiveWeapon()->GetName() << "\n";
+//			break;
+//		case 3:
+//			hero.SetActiveWeapon(2);
+//			std::cout << "Changed active weapon to: " << hero.GetActiveWeapon()->GetName() << "\n";
+//			break;
+//		case 4:
+//		break;
+//		default:
+//			break;
+//		}
+//
+//	}
+//}
 
-	hero.AddWeapon(std::make_unique<Sword>());
-	hero.AddWeapon(std::make_unique<Bow>());
-	hero.AddWeapon(std::make_unique<MagicWand>());
+//homework5
+class IDamage
+{
+public:
+	virtual void ApplyDamage(float Damage) = 0;
+};
+class IHealthReceiver
+{
+public:
+	virtual void ReceiveNewHealth(float NewHealth) = 0;
+};
 
-	SetColor(BACKCOLOR, FRONTCOLOR);
-	system("cls");
-	size_t select = 0;
-	const char* textMenu[] = { "Show all weapon",
-							   "Select sword",
-							   "Select bow",
-							   "Select MagicWand",
-							   "Exit" };
-	size_t sizeMenu = sizeof(textMenu) / sizeof(*textMenu);
+class IHealthNotify
+{
+public:
+	virtual void Attach(IHealthReceiver* receiver) = 0;
+	virtual void Detach(IHealthReceiver* receiver) = 0;
+};
+class Character :public IDamage, public IHealthNotify
+{
+private:
+	std::vector<std::unique_ptr<Weapon>> weapons;
+	std::vector< IHealthReceiver*> subscribers;
+	Weapon* activeWeapon = nullptr;
+	float health = 100.0f;
 
-	while (1)
+public:
+	void AddWeapon(std::unique_ptr<Weapon> weapon)
 	{
-		select = Menu(textMenu, sizeMenu, select);
-		system("cls");
-		switch (select)
+		if (weapons.empty())
 		{
-		case 0:
-			hero.ShowWeapons();
-			break;
-		case 1:
-			hero.SetActiveWeapon(0);
-			std::cout << "Changed active weapon to: " << hero.GetActiveWeapon()->GetName() << "\n";
-			break;
-		case 2:
-			hero.SetActiveWeapon(1);
-			std::cout << "Changed active weapon to: " << hero.GetActiveWeapon()->GetName() << "\n";
-			break;
-		case 3:
-			hero.SetActiveWeapon(2);
-			std::cout << "Changed active weapon to: " << hero.GetActiveWeapon()->GetName() << "\n";
-			break;
-		case 4:
-			return 0;
-		default:
-			break;
+			activeWeapon = weapon.get();
 		}
-
+		weapons.push_back(std::move(weapon));
 	}
+
+	void SetActiveWeapon(int index)
+	{
+		if (index >= 0 && index < weapons.size())
+		{
+			activeWeapon = weapons[index].get();
+		}
+		else
+		{
+			std::cout << "Invalid weapon index!" << std::endl;
+		}
+	}
+
+	Weapon* GetActiveWeapon() const
+	{
+		return activeWeapon;
+	}
+
+	void ShowWeapons() const
+	{
+		for (size_t i = 0; i < weapons.size(); ++i)
+		{
+			std::cout << i << ": " << weapons[i]->GetName() << " (Damage: " << weapons[i]->GetDamage() << ")\n";
+		}
+	}
+
+	virtual void ApplyDamage(float Damage)
+	{
+		health -= Damage;
+		for (IHealthReceiver* receiver : subscribers)
+		{
+			receiver->ReceiveNewHealth(health);
+		}
+	}
+	virtual void Attach(IHealthReceiver* receiver)
+	{
+		subscribers.push_back(receiver);
+	}
+	virtual void Detach(IHealthReceiver* receiver)
+	{
+		subscribers.erase(std::find(subscribers.begin(), subscribers.end(), receiver));
+	}
+	
+};
+class HealthObserver : public IHealthReceiver
+{
+public:
+	void ReceiveNewHealth(float NewHealth) override
+	{
+		std::cout << "New health received: " << NewHealth << std::endl;
+	}
+};
+
+class Enemy: public IHealthReceiver
+{
+	virtual void ReceiveNewHealth(float NewHealth)
+	{
+		std::cout << "Enemy got info: " << NewHealth << std::endl;
+	}
+};
+
+void DamageActor(IDamage* damagableActor)
+{
+	damagableActor->ApplyDamage(10.f);
+}
+int main()
+{
+	Character hero;
+	Enemy enemy;
+	HealthObserver observer;
+
+	hero.Attach(&observer);
+	hero.Attach(&enemy);
+
+	DamageActor(&hero);
+	DamageActor(&hero);
+
+
+
 	return 0;
 }
